@@ -8,13 +8,14 @@ import (
 	"github.com/theraffle/frontservice/src/internal/apiserver"
 	"github.com/theraffle/frontservice/src/internal/utils"
 	"github.com/theraffle/frontservice/src/internal/wrapper"
+	"github.com/theraffle/frontservice/src/pkg/server/user"
 	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"log"
 	"net/http"
 	"os"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"time"
 )
 
@@ -23,9 +24,13 @@ type Server interface {
 	Start(string)
 }
 
+var (
+	log = logf.Log.WithName("user-service")
+)
+
 type frontendServer struct {
-	wrapper wrapper.RouterWrapper
-	handler apiserver.APIHandler
+	wrapper     wrapper.RouterWrapper
+	userHandler apiserver.APIHandler
 
 	userSvcAddr string
 	userSvcConn *grpc.ClientConn
@@ -47,14 +52,24 @@ func New(ctx context.Context) (Server, error) {
 	server.wrapper.SetRouter(mux.NewRouter())
 	server.wrapper.Router().HandleFunc("/", server.rootHandler)
 
+	// Set apisHandler
+	userHandler, err := user.NewHandler(server.wrapper, log)
+	if err != nil {
+		return nil, err
+	}
+	server.userHandler = userHandler
+
 	return server, nil
 }
 
 func (s *frontendServer) Start(port string) {
 	addr := fmt.Sprintf("0.0.0.0:%s", port)
 
-	log.Println("starting server on " + addr)
-	log.Fatal(http.ListenAndServe(addr, s.wrapper.Router()))
+	log.Info(fmt.Sprintf("Server is running on %s", addr))
+	if err := http.ListenAndServe(addr, s.wrapper.Router()); err != nil { // TODO: TLS
+		log.Error(err, "cannot launch http server")
+		os.Exit(1)
+	}
 }
 
 func (s *frontendServer) rootHandler(w http.ResponseWriter, _ *http.Request) {
