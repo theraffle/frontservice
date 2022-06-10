@@ -2,10 +2,17 @@ package main
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
+	"fmt"
+	"github.com/theraffle/frontservice/src/internal/logrotate"
 	"github.com/theraffle/frontservice/src/pkg/server"
+	"io"
 	"os"
-	"time"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+)
+
+var (
+	setupLog = ctrl.Log.WithName("setup")
 )
 
 const (
@@ -14,18 +21,21 @@ const (
 
 func main() {
 	ctx := context.Background()
-	// set log
-	log := logrus.New()
-	log.Level = logrus.DebugLevel
-	log.Formatter = &logrus.JSONFormatter{
-		FieldMap: logrus.FieldMap{
-			logrus.FieldKeyTime:  "timestamp",
-			logrus.FieldKeyLevel: "severity",
-			logrus.FieldKeyMsg:   "message",
-		},
-		TimestampFormat: time.RFC3339Nano,
+	// Set log rotation
+	logFile, err := logrotate.LogFile()
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
-	log.Out = os.Stdout
+	defer func() {
+		_ = logFile.Close()
+	}()
+	logWriter := io.MultiWriter(logFile, os.Stdout)
+	ctrl.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(logWriter)))
+	if err := logrotate.StartRotate("0 0 1 * * ?"); err != nil {
+		setupLog.Error(err, "")
+		os.Exit(1)
+	}
 
 	// set port
 	srvPort := port
@@ -34,7 +44,7 @@ func main() {
 	}
 	srv, err := server.New(ctx)
 	if err != nil {
-		log.Errorf(err.Error(), "")
+		setupLog.Error(err, "")
 		os.Exit(1)
 	}
 	srv.Start(srvPort)

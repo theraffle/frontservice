@@ -8,6 +8,7 @@ import (
 	"github.com/theraffle/frontservice/src/internal/apiserver"
 	"github.com/theraffle/frontservice/src/internal/utils"
 	"github.com/theraffle/frontservice/src/internal/wrapper"
+	"github.com/theraffle/frontservice/src/pkg/server/project"
 	"github.com/theraffle/frontservice/src/pkg/server/user"
 	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/grpc"
@@ -29,8 +30,9 @@ var (
 )
 
 type frontendServer struct {
-	wrapper     wrapper.RouterWrapper
-	userHandler apiserver.APIHandler
+	wrapper        wrapper.RouterWrapper
+	userHandler    apiserver.APIHandler
+	projectHandler apiserver.APIHandler
 
 	userSvcAddr string
 	userSvcConn *grpc.ClientConn
@@ -59,14 +61,19 @@ func New(ctx context.Context) (Server, error) {
 	}
 	server.userHandler = userHandler
 
+	projectHandler, err := project.NewHandler(server.wrapper, log)
+	if err != nil {
+		return nil, err
+	}
+	server.projectHandler = projectHandler
+
 	return server, nil
 }
 
 func (s *frontendServer) Start(port string) {
 	addr := fmt.Sprintf("0.0.0.0:%s", port)
-
 	log.Info(fmt.Sprintf("Server is running on %s", addr))
-	if err := http.ListenAndServe(addr, s.wrapper.Router()); err != nil { // TODO: TLS
+	if err := http.ListenAndServe(addr, s.wrapper.Router()); err != nil {
 		log.Error(err, "cannot launch http server")
 		os.Exit(1)
 	}

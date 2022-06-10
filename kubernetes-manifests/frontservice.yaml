@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontmanagerservice
+  name: frontservice
 spec:
   selector:
     matchLabels:
@@ -9,7 +9,7 @@ spec:
   template:
     metadata:
       labels:
-        app: frontmanagerservice
+        app: frontservice
     spec:
       serviceAccountName: default
       terminationGracePeriodSeconds: 5

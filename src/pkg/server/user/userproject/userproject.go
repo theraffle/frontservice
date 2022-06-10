@@ -1,4 +1,4 @@
-package project
+package userproject
 
 import (
 	"github.com/go-logr/logr"
@@ -16,13 +16,13 @@ func NewHandler(parent wrapper.RouterWrapper, _ logr.Logger) (apiserver.APIHandl
 	handler := &handler{}
 
 	// Create User Project
-	createUserProject := wrapper.New("/project", []string{http.MethodPost}, handler.createUserProjectHandler)
+	createUserProject := wrapper.New("/userproject", []string{http.MethodPost}, handler.createUserProjectHandler)
 	if err := parent.Add(createUserProject); err != nil {
 		return nil, err
 	}
 
 	// Get User Projects
-	getUserProject := wrapper.New("/project", []string{http.MethodGet}, handler.getUserProjectHandler)
+	getUserProject := wrapper.New("/userproject", []string{http.MethodGet}, handler.getUserProjectHandler)
 	if err := parent.Add(getUserProject); err != nil {
 		return nil, err
 	}

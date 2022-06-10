@@ -4,7 +4,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/theraffle/frontservice/src/internal/apiserver"
 	"github.com/theraffle/frontservice/src/internal/wrapper"
-	"github.com/theraffle/frontservice/src/pkg/server/user/project"
+	"github.com/theraffle/frontservice/src/pkg/server/user/userproject"
 	"github.com/theraffle/frontservice/src/pkg/server/user/wallet"
 	"net/http"
 )
@@ -43,7 +43,7 @@ func NewHandler(parent wrapper.RouterWrapper, logger logr.Logger) (apiserver.API
 	}
 
 	// /user/{id}/project
-	projectHandler, err := project.NewHandler(userWrapper, logger)
+	projectHandler, err := userproject.NewHandler(userWrapper, logger)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (h *handler) createUserHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
-	// TODO: implement here
+
 }
 
 func (h *handler) updateUserHandler(w http.ResponseWriter, req *http.Request) {
