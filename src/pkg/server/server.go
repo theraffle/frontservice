@@ -7,7 +7,6 @@ import (
 	"github.com/theraffle/frontservice/src/internal/apiserver"
 	"github.com/theraffle/frontservice/src/internal/utils"
 	"github.com/theraffle/frontservice/src/internal/wrapper"
-	"github.com/theraffle/frontservice/src/pkg/server/project"
 	"github.com/theraffle/frontservice/src/pkg/server/user"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
@@ -21,7 +20,7 @@ type Server interface {
 }
 
 var (
-	log = logf.Log.WithName("user-service")
+	log = logf.Log.WithName("front-service")
 )
 
 type frontendServer struct {
@@ -44,11 +43,11 @@ func New(ctx context.Context) (Server, error) {
 	}
 	server.userHandler = userHandler
 
-	projectHandler, err := project.NewHandler(ctx, server.wrapper, log)
-	if err != nil {
-		return nil, err
-	}
-	server.projectHandler = projectHandler
+	//projectHandler, err := project.NewHandler(ctx, server.wrapper, log)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//server.projectHandler = projectHandler
 
 	return server, nil
 }

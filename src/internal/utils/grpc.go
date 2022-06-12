@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"go.opencensus.io/plugin/ocgrpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"os"
 	"time"
 )
@@ -24,7 +23,7 @@ func MustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
 	defer cancel()
 	*conn, err = grpc.DialContext(ctx, addr,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithInsecure(),
 		grpc.WithStatsHandler(&ocgrpc.ClientHandler{}))
 	if err != nil {
 		panic(errors.Wrapf(err, "grpc: failed to connect %s", addr))

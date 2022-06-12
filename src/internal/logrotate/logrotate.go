@@ -15,7 +15,7 @@ import (
 
 const (
 	defaultLogFileDir = "/logs"
-	logFilePrefix     = "frontmanager"
+	logFilePrefix     = "frontservice"
 )
 
 var logDir = defaultLogFileDir
