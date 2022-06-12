@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	pb "github.com/theraffle/frontservice/src/genproto/pb"
@@ -22,6 +23,11 @@ type handler struct {
 	userSvcConn    *grpc.ClientConn
 	projectHandler apiserver.APIHandler
 	walletHandler  apiserver.APIHandler
+}
+
+type createUserReqBody struct {
+	UserID    string       `json:"user_id"`
+	LoginType pb.LoginType `json:"login_type"`
 }
 
 // NewHandler instantiates a new apis handler
@@ -71,7 +77,26 @@ func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, logger logr.L
 }
 
 func (h *handler) createUserHandler(w http.ResponseWriter, req *http.Request) {
-	// TODO: implement here
+	reqID := utils.RandomString(10)
+	log := h.log.WithValues("request", reqID)
+
+	log.Info("create user request")
+	// Decode request body
+	createUserReq := &createUserReqBody{}
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(createUserReq); err != nil {
+		h.log.Error(err, "create user error")
+		_ = utils.RespondError(w, http.StatusBadRequest, "request body is not in json form or is malformed")
+		return
+	}
+	// TODO request validity check
+
+	resp, err := pb.NewUserServiceClient(h.userSvcConn).LoginUser(h.ctx, &pb.LoginUserRequest{UserID: createUserReq.UserID, LoginType: createUserReq.LoginType})
+	if err != nil {
+		h.log.Error(err, "")
+		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
+	}
+	_ = utils.RespondJSON(w, resp)
 }
 
 func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
@@ -83,7 +108,7 @@ func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Info("getting info of user", "id", id)
-	resp, err := pb.NewUserServiceClient(h.userSvcConn).GetUser(h.ctx, &pb.GetUserRequest{})
+	resp, err := pb.NewUserServiceClient(h.userSvcConn).GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(64)})
 	if err != nil {
 		h.log.Error(err, "")
 		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
