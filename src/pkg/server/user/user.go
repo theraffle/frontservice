@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	pb "github.com/theraffle/frontservice/src/genproto/pb"
@@ -13,6 +14,7 @@ import (
 	"github.com/theraffle/frontservice/src/pkg/server/user/wallet"
 	"google.golang.org/grpc"
 	"net/http"
+	"strconv"
 )
 
 type handler struct {
@@ -101,14 +103,15 @@ func (h *handler) createUserHandler(w http.ResponseWriter, req *http.Request) {
 
 func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
 	reqID := utils.RandomString(10)
-	log := h.log.WithValues("request", reqID)
+	log := h.log.WithValues("get_user_request", reqID)
 	id := mux.Vars(req)["id"]
 	if id == "" {
 		_ = utils.RespondError(w, http.StatusBadRequest, "user id not specified")
 		return
 	}
-	log.Info("getting info of user", "id", id)
-	resp, err := pb.NewUserServiceClient(h.userSvcConn).GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(64)})
+	log.Info("getting user info", "id", id)
+	intID, err := strconv.Atoi(id)
+	resp, err := pb.NewUserServiceClient(h.userSvcConn).GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(intID)})
 	if err != nil {
 		h.log.Error(err, "")
 		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
@@ -117,9 +120,55 @@ func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *handler) updateUserHandler(w http.ResponseWriter, req *http.Request) {
-	// TODO: implement here
-}
+	reqID := utils.RandomString(10)
+	log := h.log.WithValues("get_user_request", reqID)
+	id := mux.Vars(req)["id"]
+	if id == "" {
+		_ = utils.RespondError(w, http.StatusBadRequest, "user id not specified")
+		return
+	}
+	// Decode request body
+	updateUserReq := &createUserReqBody{}
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(updateUserReq); err != nil {
+		h.log.Error(err, "create user error")
+		_ = utils.RespondError(w, http.StatusBadRequest, "request body is not in json form or is malformed")
+		return
+	}
 
-func (h *handler) getUserProjectHandler(w http.ResponseWriter, req *http.Request) {
-	// TODO: implement here
+	log.Info("updating user info", "id", id)
+
+	intID, err := strconv.Atoi(id)
+	userSvcCli := pb.NewUserServiceClient(h.userSvcConn)
+	resp, err := userSvcCli.GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(intID)})
+	if err != nil {
+		h.log.Error(err, "")
+		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
+	}
+
+	rpcReq := &pb.UpdateUserRequest{
+		UserID:     resp.UserID,
+		TelegramID: resp.TelegramID,
+		DiscordID:  resp.DiscordID,
+		TwitterID:  resp.TwitterID,
+	}
+
+	if updateUserReq.LoginType == pb.LoginType_DISCORD {
+		rpcReq.DiscordID = updateUserReq.UserID
+	} else if updateUserReq.LoginType == pb.LoginType_TELEGRAM {
+		rpcReq.TelegramID = updateUserReq.UserID
+	} else if updateUserReq.LoginType == pb.LoginType_TWITTER {
+		rpcReq.TwitterID = updateUserReq.UserID
+	} else {
+		err = fmt.Errorf("invalid id type")
+		h.log.Error(err, "")
+		_ = utils.RespondError(w, http.StatusBadRequest, "invalid id type")
+	}
+
+	resp, err = userSvcCli.UpdateUser(h.ctx, rpcReq)
+	if err != nil {
+		h.log.Error(err, "")
+		_ = utils.RespondError(w, http.StatusBadRequest, "update user error")
+	}
+	_ = utils.RespondJSON(w, resp)
 }
