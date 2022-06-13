@@ -110,7 +110,7 @@ func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	log.Info("getting user info", "id", id)
-	intID, err := strconv.Atoi(id)
+	intID, _ := strconv.Atoi(id)
 	resp, err := pb.NewUserServiceClient(h.userSvcConn).GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(intID)})
 	if err != nil {
 		h.log.Error(err, "")
@@ -138,7 +138,7 @@ func (h *handler) updateUserHandler(w http.ResponseWriter, req *http.Request) {
 
 	log.Info("updating user info", "id", id)
 
-	intID, err := strconv.Atoi(id)
+	intID, _ := strconv.Atoi(id)
 	userSvcCli := pb.NewUserServiceClient(h.userSvcConn)
 	resp, err := userSvcCli.GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(intID)})
 	if err != nil {

@@ -8,7 +8,7 @@ import (
 )
 
 type handler struct {
-	log logr.Logger
+	_ logr.Logger
 }
 
 // NewHandler instantiates a new apis handler

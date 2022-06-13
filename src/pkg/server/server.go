@@ -24,9 +24,9 @@ var (
 )
 
 type frontendServer struct {
-	wrapper        wrapper.RouterWrapper
-	userHandler    apiserver.APIHandler
-	projectHandler apiserver.APIHandler
+	wrapper     wrapper.RouterWrapper
+	userHandler apiserver.APIHandler
+	// projectHandler apiserver.APIHandler
 }
 
 func New(ctx context.Context) (Server, error) {

@@ -12,7 +12,7 @@ import (
 
 type handler struct {
 	ctx context.Context
-	log logr.Logger
+	_   logr.Logger
 
 	projectSvcAddr string
 	projectSvcConn *grpc.ClientConn
