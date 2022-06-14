@@ -45,6 +45,7 @@ type frontendServer struct {
 	// projectHandler apiserver.APIHandler
 }
 
+// New returns new frontend http server
 func New(ctx context.Context) (Server, error) {
 	server := new(frontendServer)
 	server.wrapper = wrapper.New("/", nil, server.rootHandler)

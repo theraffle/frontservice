@@ -27,6 +27,7 @@ import (
 	"time"
 )
 
+// MustMapEnv map service address to target address string
 func MustMapEnv(target *string, envKey string) {
 	v := os.Getenv(envKey)
 	if v == "" {
@@ -35,6 +36,7 @@ func MustMapEnv(target *string, envKey string) {
 	*target = v
 }
 
+// MustConnGRPC connect grpc client to target address
 func MustConnGRPC(ctx context.Context, conn **grpc.ClientConn, addr string) {
 	var err error
 	ctx, cancel := context.WithTimeout(ctx, time.Second*3)
