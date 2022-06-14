@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/theraffle/frontservice/src/internal/apiserver"
-	"github.com/theraffle/frontservice/src/internal/utils"
-	"github.com/theraffle/frontservice/src/internal/wrapper"
-	"github.com/theraffle/frontservice/src/pkg/server/user"
+	"github.com/theraffle/frontservice/src/apihandler"
+	"github.com/theraffle/frontservice/src/server/user"
+	"github.com/theraffle/frontservice/src/utils"
+	"github.com/theraffle/frontservice/src/wrapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"net/http"
 	"os"
@@ -41,8 +41,8 @@ var (
 
 type frontendServer struct {
 	wrapper     wrapper.RouterWrapper
-	userHandler apiserver.APIHandler
-	// projectHandler apiserver.APIHandler
+	userHandler apihandler.APIHandler
+	// projectHandler apihandler.APIHandler
 }
 
 // New returns new frontend http server

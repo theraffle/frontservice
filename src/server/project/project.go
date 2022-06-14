@@ -19,9 +19,9 @@ package project
 import (
 	"context"
 	"github.com/go-logr/logr"
-	"github.com/theraffle/frontservice/src/internal/apiserver"
-	"github.com/theraffle/frontservice/src/internal/utils"
-	"github.com/theraffle/frontservice/src/internal/wrapper"
+	"github.com/theraffle/frontservice/src/apihandler"
+	"github.com/theraffle/frontservice/src/utils"
+	"github.com/theraffle/frontservice/src/wrapper"
 	"google.golang.org/grpc"
 	"net/http"
 )
@@ -35,7 +35,7 @@ type handler struct {
 }
 
 // NewHandler instantiates a new apis handler
-func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, _ logr.Logger) (apiserver.APIHandler, error) {
+func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, _ logr.Logger) (apihandler.APIHandler, error) {
 	handler := &handler{ctx: ctx}
 	utils.MustMapEnv(&handler.projectSvcAddr, "PROJECT_SERVICE_ADDR")
 	utils.MustConnGRPC(ctx, &handler.projectSvcConn, handler.projectSvcAddr)

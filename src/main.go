@@ -19,8 +19,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/theraffle/frontservice/src/internal/logrotate"
-	"github.com/theraffle/frontservice/src/pkg/server"
+	"github.com/theraffle/frontservice/src/logrotate"
+	"github.com/theraffle/frontservice/src/server"
 	"io"
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"

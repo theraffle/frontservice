@@ -14,7 +14,7 @@
  limitations under the License.
 */
 
-package apiserver
+package apihandler
 
 // APIHandler is an api handler interface.
 // Common functions should be defined, if needed
