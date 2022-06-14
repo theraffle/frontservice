@@ -17,14 +17,23 @@
 package userproject
 
 import (
+	"context"
+	"encoding/json"
 	"github.com/go-logr/logr"
+	"github.com/gorilla/mux"
 	"github.com/theraffle/frontservice/src/apihandler"
+	"github.com/theraffle/frontservice/src/genproto/pb"
+	"github.com/theraffle/frontservice/src/utils"
 	"github.com/theraffle/frontservice/src/wrapper"
+	"google.golang.org/grpc"
 	"net/http"
+	"strconv"
 )
 
 type handler struct {
-	_ logr.Logger
+	ctx         context.Context
+	log         logr.Logger
+	userSvcConn *grpc.ClientConn
 }
 
 // NewHandler instantiates a new apis handler
@@ -38,7 +47,7 @@ func NewHandler(parent wrapper.RouterWrapper, _ logr.Logger) (apihandler.APIHand
 	}
 
 	// Get User Projects
-	getUserProject := wrapper.New("/userproject", []string{http.MethodGet}, handler.getUserProjectHandler)
+	getUserProject := wrapper.New("/userprojects", []string{http.MethodGet}, handler.getUserProjectHandler)
 	if err := parent.Add(getUserProject); err != nil {
 		return nil, err
 	}
@@ -46,10 +55,65 @@ func NewHandler(parent wrapper.RouterWrapper, _ logr.Logger) (apihandler.APIHand
 	return handler, nil
 }
 
-func (h handler) getUserProjectHandler(writer http.ResponseWriter, request *http.Request) {
-
+type createUserProjectReqBody struct {
+	ProjectID int64  `json:"project_id,omitempty"`
+	ChainID   int64  `json:"chain_id,omitempty"`
+	Address   string `json:"address,omitempty"`
 }
 
-func (h handler) createUserProjectHandler(writer http.ResponseWriter, request *http.Request) {
+func (h handler) createUserProjectHandler(w http.ResponseWriter, req *http.Request) {
+	reqID := utils.RandomString(10)
+	log := h.log.WithValues("request", reqID)
 
+	id := mux.Vars(req)["id"]
+	if id == "" {
+		_ = utils.RespondError(w, http.StatusBadRequest, "user id not specified")
+		return
+	}
+
+	log.Info("create user wallet", "id", id)
+
+	intID, _ := strconv.Atoi(id)
+	// Decode request body
+	createUserProjectReq := &createUserProjectReqBody{}
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(createUserProjectReq); err != nil {
+		h.log.Error(err, "create user project error")
+		_ = utils.RespondError(w, http.StatusBadRequest, "request body is not in json form or is malformed")
+		return
+	}
+	// TODO request validity check
+
+	resp, err := pb.NewUserServiceClient(h.userSvcConn).CreateUserProject(h.ctx, &pb.CreateUserProjectRequest{
+		UserID:    int64(intID),
+		ProjectID: createUserProjectReq.ProjectID,
+		ChainID:   createUserProjectReq.ChainID,
+		Address:   createUserProjectReq.Address,
+	})
+	if err != nil {
+		h.log.Error(err, "")
+		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
+	}
+	_ = utils.RespondJSON(w, resp)
+}
+
+func (h handler) getUserProjectHandler(w http.ResponseWriter, req *http.Request) {
+	reqID := utils.RandomString(10)
+	log := h.log.WithValues("request", reqID)
+
+	id := mux.Vars(req)["id"]
+	if id == "" {
+		_ = utils.RespondError(w, http.StatusBadRequest, "user id not specified")
+		return
+	}
+
+	log.Info("getting user projects info", "id", id)
+
+	intID, _ := strconv.Atoi(id)
+	resp, err := pb.NewUserServiceClient(h.userSvcConn).GetUserProject(h.ctx, &pb.GetUserProjectRequest{UserID: int64(intID)})
+	if err != nil {
+		h.log.Error(err, "")
+		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
+	}
+	_ = utils.RespondJSON(w, resp)
 }

@@ -23,10 +23,10 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"github.com/theraffle/frontservice/src/apihandler"
-	pb "github.com/theraffle/frontservice/src/genproto/pb"
+	"github.com/theraffle/frontservice/src/genproto/pb"
 	"github.com/theraffle/frontservice/src/server/user/userproject"
 	"github.com/theraffle/frontservice/src/server/user/wallet"
-	utils2 "github.com/theraffle/frontservice/src/utils"
+	"github.com/theraffle/frontservice/src/utils"
 	"github.com/theraffle/frontservice/src/wrapper"
 	"google.golang.org/grpc"
 	"net/http"
@@ -51,8 +51,8 @@ type createUserReqBody struct {
 // NewHandler instantiates a new apis handler
 func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, logger logr.Logger) (apihandler.APIHandler, error) {
 	handler := &handler{ctx: ctx, log: logger}
-	utils2.MustMapEnv(&handler.userSvcAddr, "USER_SERVICE_ADDR")
-	utils2.MustConnGRPC(ctx, &handler.userSvcConn, handler.userSvcAddr)
+	utils.MustMapEnv(&handler.userSvcAddr, "USER_SERVICE_ADDR")
+	utils.MustConnGRPC(ctx, &handler.userSvcConn, handler.userSvcAddr)
 
 	// Create User & Login
 	createUser := wrapper.New("/user", []string{http.MethodPost}, handler.createUserHandler)
@@ -85,7 +85,7 @@ func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, logger logr.L
 	handler.projectHandler = projectHandler
 
 	// /user/{id}/wallet
-	walletHandler, err := wallet.NewHandler(userWrapper, logger)
+	walletHandler, err := wallet.NewHandler(ctx, userWrapper, logger, handler.userSvcConn)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, logger logr.L
 }
 
 func (h *handler) createUserHandler(w http.ResponseWriter, req *http.Request) {
-	reqID := utils2.RandomString(10)
+	reqID := utils.RandomString(10)
 	log := h.log.WithValues("request", reqID)
 
 	log.Info("create user request")
@@ -104,7 +104,7 @@ func (h *handler) createUserHandler(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(createUserReq); err != nil {
 		h.log.Error(err, "create user error")
-		_ = utils2.RespondError(w, http.StatusBadRequest, "request body is not in json form or is malformed")
+		_ = utils.RespondError(w, http.StatusBadRequest, "request body is not in json form or is malformed")
 		return
 	}
 	// TODO request validity check
@@ -112,17 +112,17 @@ func (h *handler) createUserHandler(w http.ResponseWriter, req *http.Request) {
 	resp, err := pb.NewUserServiceClient(h.userSvcConn).LoginUser(h.ctx, &pb.LoginUserRequest{UserID: createUserReq.UserID, LoginType: createUserReq.LoginType})
 	if err != nil {
 		h.log.Error(err, "")
-		_ = utils2.RespondError(w, http.StatusBadRequest, "response error")
+		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
 	}
-	_ = utils2.RespondJSON(w, resp)
+	_ = utils.RespondJSON(w, resp)
 }
 
 func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
-	reqID := utils2.RandomString(10)
+	reqID := utils.RandomString(10)
 	log := h.log.WithValues("get_user_request", reqID)
 	id := mux.Vars(req)["id"]
 	if id == "" {
-		_ = utils2.RespondError(w, http.StatusBadRequest, "user id not specified")
+		_ = utils.RespondError(w, http.StatusBadRequest, "user id not specified")
 		return
 	}
 	log.Info("getting user info", "id", id)
@@ -130,17 +130,17 @@ func (h *handler) getUserHandler(w http.ResponseWriter, req *http.Request) {
 	resp, err := pb.NewUserServiceClient(h.userSvcConn).GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(intID)})
 	if err != nil {
 		h.log.Error(err, "")
-		_ = utils2.RespondError(w, http.StatusBadRequest, "response error")
+		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
 	}
-	_ = utils2.RespondJSON(w, resp)
+	_ = utils.RespondJSON(w, resp)
 }
 
 func (h *handler) updateUserHandler(w http.ResponseWriter, req *http.Request) {
-	reqID := utils2.RandomString(10)
+	reqID := utils.RandomString(10)
 	log := h.log.WithValues("get_user_request", reqID)
 	id := mux.Vars(req)["id"]
 	if id == "" {
-		_ = utils2.RespondError(w, http.StatusBadRequest, "user id not specified")
+		_ = utils.RespondError(w, http.StatusBadRequest, "user id not specified")
 		return
 	}
 	// Decode request body
@@ -148,7 +148,7 @@ func (h *handler) updateUserHandler(w http.ResponseWriter, req *http.Request) {
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(updateUserReq); err != nil {
 		h.log.Error(err, "create user error")
-		_ = utils2.RespondError(w, http.StatusBadRequest, "request body is not in json form or is malformed")
+		_ = utils.RespondError(w, http.StatusBadRequest, "request body is not in json form or is malformed")
 		return
 	}
 
@@ -159,7 +159,7 @@ func (h *handler) updateUserHandler(w http.ResponseWriter, req *http.Request) {
 	resp, err := userSvcCli.GetUser(h.ctx, &pb.GetUserRequest{UserID: int64(intID)})
 	if err != nil {
 		h.log.Error(err, "")
-		_ = utils2.RespondError(w, http.StatusBadRequest, "response error")
+		_ = utils.RespondError(w, http.StatusBadRequest, "response error")
 	}
 
 	rpcReq := &pb.UpdateUserRequest{
@@ -178,13 +178,13 @@ func (h *handler) updateUserHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		err = fmt.Errorf("invalid id type")
 		h.log.Error(err, "")
-		_ = utils2.RespondError(w, http.StatusBadRequest, "invalid id type")
+		_ = utils.RespondError(w, http.StatusBadRequest, "invalid id type")
 	}
 
 	resp, err = userSvcCli.UpdateUser(h.ctx, rpcReq)
 	if err != nil {
 		h.log.Error(err, "")
-		_ = utils2.RespondError(w, http.StatusBadRequest, "update user error")
+		_ = utils.RespondError(w, http.StatusBadRequest, "update user error")
 	}
-	_ = utils2.RespondJSON(w, resp)
+	_ = utils.RespondJSON(w, resp)
 }
