@@ -1,3 +1,19 @@
+/*
+ Copyright 2022 The Raffle Authors
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+*/
+
 syntax = "proto3";
 
 package pb;
@@ -93,4 +109,46 @@ enum LoginType {
   DISCORD = 0;
   TELEGRAM = 1;
   TWITTER = 2;
+}
+
+// -----------------Project Service--------------------
+
+service ProjectService {
+  rpc CreateProject (CreateProjectRequest) returns (CreateProjectResponse) {}
+  rpc GetProject (GetProjectRequest) returns (GetProjectResponse) {}
+  rpc GetAllProjects (Empty) returns (GetAllProjectResponse) {}
+  rpc UpdateProject (UpdateProjectRequest) returns (GetProjectResponse) {}
+}
+
+message Project{
+  int64 projectID = 1;
+  string projectName = 2;
+  int64 chainID = 3;
+  string raffleContract = 4;
+}
+
+message CreateProjectRequest {
+  string projectName = 1;
+  int64 chainID = 2;
+  string raffleContract = 3;
+}
+
+message CreateProjectResponse {
+  int64 projectID = 1;
+}
+
+message GetProjectRequest {
+  int64 projectID = 1;
+}
+
+message GetProjectResponse {
+  Project project = 1;
+}
+
+message GetAllProjectResponse {
+  repeated Project projects = 1;
+}
+
+message UpdateProjectRequest {
+  int64 projectID = 1;
 }
