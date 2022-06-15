@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/theraffle/frontservice/src/apihandler"
+	"github.com/theraffle/frontservice/src/server/project"
 	"github.com/theraffle/frontservice/src/server/user"
 	"github.com/theraffle/frontservice/src/utils"
 	"github.com/theraffle/frontservice/src/wrapper"
@@ -40,9 +41,9 @@ var (
 )
 
 type frontendServer struct {
-	wrapper     wrapper.RouterWrapper
-	userHandler apihandler.APIHandler
-	// projectHandler apihandler.APIHandler
+	wrapper        wrapper.RouterWrapper
+	userHandler    apihandler.APIHandler
+	projectHandler apihandler.APIHandler
 }
 
 // New returns new frontend http server
@@ -60,11 +61,11 @@ func New(ctx context.Context) (Server, error) {
 	}
 	server.userHandler = userHandler
 
-	//projectHandler, err := project.NewHandler(ctx, server.wrapper, log)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//server.projectHandler = projectHandler
+	projectHandler, err := project.NewHandler(ctx, server.wrapper, log)
+	if err != nil {
+		return nil, err
+	}
+	server.projectHandler = projectHandler
 
 	return server, nil
 }

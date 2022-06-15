@@ -78,7 +78,7 @@ func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, logger logr.L
 	}
 
 	// /user/{id}/project
-	projectHandler, err := userproject.NewHandler(userWrapper, logger)
+	projectHandler, err := userproject.NewHandler(ctx, userWrapper, logger, handler.userSvcConn)
 	if err != nil {
 		return nil, err
 	}

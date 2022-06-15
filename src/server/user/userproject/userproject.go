@@ -37,18 +37,18 @@ type handler struct {
 }
 
 // NewHandler instantiates a new apis handler
-func NewHandler(parent wrapper.RouterWrapper, _ logr.Logger) (apihandler.APIHandler, error) {
-	handler := &handler{}
+func NewHandler(ctx context.Context, parent wrapper.RouterWrapper, log logr.Logger, userSvcConn *grpc.ClientConn) (apihandler.APIHandler, error) {
+	handler := &handler{ctx: ctx, log: log, userSvcConn: userSvcConn}
 
 	// Create User Project
-	createUserProject := wrapper.New("/userproject", []string{http.MethodPost}, handler.createUserProjectHandler)
+	createUserProject := wrapper.New("/project", []string{http.MethodPost}, handler.createUserProjectHandler)
 	if err := parent.Add(createUserProject); err != nil {
 		return nil, err
 	}
 
 	// Get User Projects
-	getUserProject := wrapper.New("/userprojects", []string{http.MethodGet}, handler.getUserProjectHandler)
-	if err := parent.Add(getUserProject); err != nil {
+	getUserProjects := wrapper.New("/projects", []string{http.MethodGet}, handler.getUserProjectsHandler)
+	if err := parent.Add(getUserProjects); err != nil {
 		return nil, err
 	}
 
@@ -63,7 +63,7 @@ type createUserProjectReqBody struct {
 
 func (h handler) createUserProjectHandler(w http.ResponseWriter, req *http.Request) {
 	reqID := utils.RandomString(10)
-	log := h.log.WithValues("request", reqID)
+	log := h.log.WithValues("create_user_project_request", reqID)
 
 	id := mux.Vars(req)["id"]
 	if id == "" {
@@ -71,7 +71,7 @@ func (h handler) createUserProjectHandler(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	log.Info("create user wallet", "id", id)
+	log.Info("create user project", "id", id)
 
 	intID, _ := strconv.Atoi(id)
 	// Decode request body
@@ -97,9 +97,9 @@ func (h handler) createUserProjectHandler(w http.ResponseWriter, req *http.Reque
 	_ = utils.RespondJSON(w, resp)
 }
 
-func (h handler) getUserProjectHandler(w http.ResponseWriter, req *http.Request) {
+func (h handler) getUserProjectsHandler(w http.ResponseWriter, req *http.Request) {
 	reqID := utils.RandomString(10)
-	log := h.log.WithValues("request", reqID)
+	log := h.log.WithValues("get_user_project_request", reqID)
 
 	id := mux.Vars(req)["id"]
 	if id == "" {
