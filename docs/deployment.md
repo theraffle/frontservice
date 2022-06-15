@@ -8,14 +8,14 @@ This is a guide to deploy FrontService on your cluster. The contents are as foll
 
 ## Prerequisites
 - [User Service](https://github.com/theraffle/userservice/blob/main/docs/deployment.md)
-- Project Service
+- [Project Service](https://github.com/theraffle/projectservice/blob/main/docs/deployment.md)
 - Kubernetes Cluster
 - (optional) Ingress Controller
 
 ## Deploy FrontService 
 1. Apply `frontservice.yaml`
    ```bash
-   kubectl apply -f ./kubernetes-manifests/frontservice.yaml
+   kubectl apply -f ./kubernetes-manifests/release.yaml
    ```
 2. Wait until `frontservice` pod is ready
    ```bash

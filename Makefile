@@ -1,5 +1,5 @@
 # Current  Version
-VERSION ?= v0.0.1-alpha
+VERSION ?= v0.1.0
 REGISTRY ?= changjjjjjjjj
 
 # Image URL to use all building/pushing image targets
@@ -18,3 +18,7 @@ docker-push:
 # Test code lint
 test-lint:
 	golangci-lint run ./... -v
+
+# Generate manifests.
+manifests:
+	bash ./hack/release-manifest.sh $(VERSION) $(REGISTRY)

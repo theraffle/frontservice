@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontservice
+spec:
+  selector:
+    matchLabels:
+      app: frontservice
+  template:
+    metadata:
+      labels:
+        app: frontservice
+    spec:
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: server
+          image: changjjjjjjjj/raffle-front-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: USER_SERVICE_ADDR
+              value: "userservice:3550"
+            - name: PROJECT_SERVICE_ADDR
+              value: "projectservice:7000"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
